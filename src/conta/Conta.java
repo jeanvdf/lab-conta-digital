@@ -1,31 +1,30 @@
 package conta;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import banco.Banco;
 import banco.Transacao;
 import cadastro.Perfil;
+import manager.OperacoesManagerImpl;
 
-public class Conta implements IConta{
+public class Conta {
 
-    private static SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-	private Integer AGENCIA_PADRAO = 1;
-	private Integer NUMERO_CONTA_SEQUENCIAL = 1;
+	private static OperacoesManagerImpl manager = new OperacoesManagerImpl();
+	private Integer AGENCIA_PADRAO = 001;
+	private static Integer NUMERO_CONTA_SEQUENCIAL = 001;
 
 	public Conta(String tipo, Banco banco) {
 		this.agencia = AGENCIA_PADRAO ;
-		this.agencia = NUMERO_CONTA_SEQUENCIAL++;
+		this.numero = NUMERO_CONTA_SEQUENCIAL++;
 		this.tipo = tipo;
 		this.extrato = new ArrayList<Transacao>();
 		this.saldo = 0D;
 	}
 	
 	public Conta(Perfil perfil, String tipo, Banco banco) {
-		this.agencia = AGENCIA_PADRAO ;
-		this.agencia = NUMERO_CONTA_SEQUENCIAL++;
+		this.agencia = AGENCIA_PADRAO;
+		this.numero = NUMERO_CONTA_SEQUENCIAL++;
 		this.tipo = tipo;
 		this.perfil = perfil;
 		this.extrato = new ArrayList<Transacao>();
@@ -58,88 +57,41 @@ public class Conta implements IConta{
 		return perfil;
 	}
 
-	@Override
 	public void sacar(Double valor) {
-		if(valor > saldo) {
-			System.out.println("Saldo insuficiente.");
-			return;
-		}
-
-		Transacao transacao = new Transacao(valor, Transacao.SAQUE, this);
-		transacao.setDataTransacao(new Date());
-		this.extrato.add(transacao);
-		this.saldo -= valor;
-		System.out.println("Saque realizado.");
+		
+		this.saldo = manager.sacar(valor, this.saldo, this);
+		
+		System.out.println("Saque de R$" + valor + " realizado.");
 	
 	}
 	
-	@Override
 	public void depositar(Double valor) {
-		if(valor == null) {
-			System.out.println("Informe um valor para depósito.");
-			return;
-		}
 		
-		if(valor < 0) {
-			valor *= -1;
-		}else if (valor == 0) {
-			System.out.println("Informe um valor maior que zero para depósito.");
-			return;
-		}
+		this.saldo = manager.depositar(valor, this.saldo, this);
 		
-		Transacao transacao = new Transacao(valor, Transacao.DEPOSITO, this);
-		transacao.setDataTransacao(new Date());
-		this.extrato.add(transacao);
-		
-		this.saldo += valor;
-		System.out.println("Depósito realizado.");
+		System.out.println("Depósito de R$" + valor + " realizado na conta " + this.getAgencia() + "/" +this.getNumero());
 		
 	}
 	
-	@Override
 	public void transferir(Double valor, Conta contaDestino) {
-		
-		if(valor > saldo) {
-			System.out.println("Saldo insuficiente.");
-			return;
-		}
 
-		this.saldo -= valor;
-		contaDestino.depositar(valor);
-		Transacao transacao = new Transacao(valor, Transacao.DEPOSITO, this);
-		transacao.setContaDestino(contaDestino);
-		transacao.setDataTransacao(new Date());
-		
-		this.extrato.add(transacao);
+		this.saldo = manager.transferir(valor, this.saldo, this, contaDestino);
 		
 		System.out.println("Transferência realizada.");
 		
 	}
 	
-	@Override
 	public void imprimirExtrato(Conta conta) {
 		
-		for (Transacao t : this.extrato) {
-			
-			if(Transacao.DEPOSITO.equals(t.getOperacao())) {
-				System.out.println("Deposito de R$" + t.getValor() + " na data " + sdf.format(t.getDataTransacao()));
-				
-			}else if(Transacao.SAQUE.equals(t.getOperacao())) {
-				System.out.println("Saque de R$" + t.getValor() + " na data " + sdf.format(t.getDataTransacao()));
-				
-			}else {
-				System.out.println("Transferencia de " +t.getContaPrincipal().getPerfil().getNome()  
-									+ " para " + t.getContaDestino().getPerfil().getNome() 
-									+ " no valor de R$" + t.getValor() 
-									+ " na data " + sdf.format(t.getDataTransacao()));
-				
-			}
-		}
-		
+		manager.imprimirExtrato(conta, conta.getExtrato());
 	}
 	
 	public void imprimirSaldo(Conta conta) {
 		System.out.println("Saldo atual R$ " + conta.getSaldo());
+	}
+	
+	public void addExtrato(Transacao transacao) {
+		this.extrato.add(transacao);
 	}
 	
 }

@@ -23,6 +23,7 @@ public class MainApplication {
 		conta.transferir(10D, contaDestino);
 		conta.imprimirSaldo(conta);
 		conta.imprimirExtrato(conta);
+		conta.imprimirExtrato(contaDestino);
 
 	}
 
